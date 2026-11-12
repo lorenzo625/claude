@@ -14,8 +14,14 @@ Works in Chrome, Edge, Brave and other Chromium browsers (version 116 or newer).
 2. Click **Load unpacked** and choose the `extension` folder.
 3. Play music on any site. Pages that were already open need a reload first.
 
-Click the toolbar icon to switch him off, change his size, or sync him to the
-tab's audio. Drag him to move him; he remembers the spot.
+Click the toolbar icon for the controls:
+
+- **Dance when music plays** switches the dancing on or off.
+- **Always on the page** keeps him on every page, standing still until music starts.
+- **Size** and **Flip horizontally** change how he looks.
+- **Sync to this tab's audio** is described below.
+
+Drag him to move him; he remembers the spot.
 
 ## How he hears the beat
 

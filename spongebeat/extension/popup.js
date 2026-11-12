@@ -1,5 +1,5 @@
 const statusText = document.getElementById('status');
-const enabledBox = document.getElementById('enabled');
+const switches = document.querySelectorAll('input[role="switch"]'); // each id is its settings key
 const captureButton = document.getElementById('capture');
 const hint = document.getElementById('hint');
 let tab = null;
@@ -13,7 +13,7 @@ function describe(status) {
   }
   switch (status.mode) {
     case 'off':
-      return 'Switched off.';
+      return status.visible ? 'Standing still. Dancing is switched off.' : 'Switched off.';
     case 'synced':
       return status.bpm ? `Dancing to the beat · ${status.bpm} BPM` : 'Dancing to the beat.';
     case 'freestyle':
@@ -54,14 +54,16 @@ captureButton.addEventListener('click', async () => {
   refresh();
 });
 
-enabledBox.addEventListener('change', () => chrome.storage.local.set({ enabled: enabledBox.checked }));
+for (const box of switches) {
+  box.addEventListener('change', () => chrome.storage.local.set({ [box.id]: box.checked }));
+}
 for (const radio of document.querySelectorAll('input[name="size"]')) {
   radio.addEventListener('change', () => chrome.storage.local.set({ size: radio.value }));
 }
 
 (async () => {
-  const stored = await chrome.storage.local.get({ enabled: true, size: 'medium' });
-  enabledBox.checked = stored.enabled;
+  const stored = await chrome.storage.local.get({ enabled: true, always: false, flip: false, size: 'medium' });
+  for (const box of switches) box.checked = stored[box.id];
   document.querySelector(`input[name="size"][value="${stored.size}"]`).checked = true;
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   await refresh();

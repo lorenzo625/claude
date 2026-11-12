@@ -16,6 +16,7 @@
       pointer-events: none; cursor: grab; user-select: none; -webkit-user-drag: none; touch-action: none; }
     .stage.on .sponge { pointer-events: auto; }
     .sponge.pixel { image-rendering: pixelated; }
+    .sponge.flip { scale: -1 1; }
     .sponge:active { cursor: grabbing; }
     .note { position: absolute; top: 6%; width: 2px; height: 2px; color: #e8915a;
       animation: float 1.1s ease-out forwards; }
@@ -27,7 +28,8 @@
   `;
 
   const frames = new Map(); // frameId -> { audio, signal, at }
-  const settings = { enabled: true, size: 'medium', pos: { right: 24, bottom: 8 } };
+  // `enabled` is dancing to music; `always` keeps him on the page whether or not anything plays.
+  const settings = { enabled: true, always: false, flip: false, size: 'medium', pos: { right: 24, bottom: 8 } };
   let audible = false; // Chrome's "this tab is making sound" flag
   let lastReport = -Infinity; // when a frame last reported on its own media
   let recheck = 0;
@@ -68,8 +70,10 @@
     const now = performance.now();
     if (dancing) quietSince = 0;
     else if (!quietSince) quietSince = now;
-    const show = dancing || (visible && current === 'quiet' && now - quietSince < LINGER);
+    const show = settings.always || dancing || (visible && current === 'quiet' && now - quietSince < LINGER);
     if (show !== visible) setVisible(show);
+    // Standing still in always-on mode needs no animation loop; everything else does.
+    if (visible && (dancing || !settings.always)) wake();
     // Nothing else re-evaluates while he is hidden and the tab still counts as audible.
     if (audible && current === 'quiet' && !recheck) {
       recheck = setTimeout(() => {
@@ -83,6 +87,11 @@
   function build() {
     // XML and SVG documents cannot host the overlay.
     if (!(document.documentElement instanceof HTMLHtmlElement)) return false;
+    // Let the parser add <head> and <body> first so he is never the first child of <html>.
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', update, { once: true });
+      return false;
+    }
     const host = document.createElement('spongebeat-dancer');
     host.setAttribute('aria-hidden', 'true');
     host.style.cssText = 'all: initial; position: fixed; z-index: 2147483647; pointer-events: none;';
@@ -147,6 +156,20 @@
     style.bottom = `${settings.pos.bottom}px`;
     // Shrinking with nearest-neighbour would drop the one-pixel face lines.
     ui.img.classList.toggle('pixel', scale >= 1);
+    ui.img.classList.toggle('flip', settings.flip);
+  }
+
+  function wake() {
+    if (raf) return;
+    lastFrame = performance.now();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function rest() {
+    cancelAnimationFrame(raf);
+    raf = 0;
+    bounce.x = bounce.v = lean.x = lean.v = lean.target = 0;
+    if (ui) ui.img.style.transform = '';
   }
 
   function setVisible(show) {
@@ -156,21 +179,19 @@
       if (!ui.host.isConnected) document.documentElement.append(ui.host);
       // Let the hidden state render first so the pop-in transition runs.
       requestAnimationFrame(() => visible && ui.stage.classList.add('on'));
-      lastFrame = performance.now();
-      if (!raf) raf = requestAnimationFrame(frame);
+      wake();
     } else {
       ui?.stage.classList.remove('on');
-      cancelAnimationFrame(raf);
-      raf = 0;
-      bounce.x = bounce.v = lean.x = lean.v = lean.target = 0;
-      if (ui) ui.img.style.transform = '';
+      rest();
     }
   }
 
   function beat(strength) {
+    if (!settings.enabled) return;
     lastBeat = performance.now();
     beats++;
     if (!visible) return;
+    wake();
     side = -side;
     bounce.x = Math.min(bounce.x, -(0.1 + 0.12 * strength));
     bounce.v = 0;
@@ -205,6 +226,11 @@
     spring(bounce, 0, 170, 8, dt);
     lean.target *= Math.exp(-dt * 1.2);
     spring(lean, lean.target, 120, 12, dt);
+    const settled = Math.abs(bounce.x) + Math.abs(bounce.v) < 1e-3 && Math.abs(lean.x) + Math.abs(lean.v) < 0.05;
+    if (settings.always && current !== 'synced' && current !== 'freestyle' && settled) {
+      rest(); // a beat or a change of state wakes the loop again
+      return;
+    }
     const hop = Math.max(0, bounce.x) * ui.host.offsetHeight * 0.6;
     ui.img.style.transform =
       `translate(${(lean.x * 0.8).toFixed(2)}px, ${(-hop).toFixed(2)}px) rotate(${lean.x.toFixed(2)}deg) ` +

@@ -9,7 +9,10 @@
 <header>
   <img src="images/icon128.png" alt="" width="56" height="56">
   <div>
-    <h1>SpongeBeat</h1>
+    <div class="title">
+      <h1>SpongeBeat</h1>
+      <p class="byline">by fatumurfate</p>
+    </div>
     <p id="status" role="status">Checking this tab…</p>
   </div>
 </header>
@@ -17,6 +20,11 @@
 <label class="row">
   <span>Dance when music plays</span>
   <input id="enabled" type="checkbox" role="switch">
+</label>
+
+<label class="row">
+  <span>Always on the page</span>
+  <input id="always" type="checkbox" role="switch">
 </label>
 
 <fieldset class="row">
@@ -27,6 +35,11 @@
     <label><input type="radio" name="size" value="large"><span>Large</span></label>
   </div>
 </fieldset>
+
+<label class="row">
+  <span>Flip horizontally</span>
+  <input id="flip" type="checkbox" role="switch">
+</label>
 
 <button id="capture" type="button">Sync to this tab's audio</button>
 <p class="hint" id="hint">Works on any site, including ones that hide their audio. Drag him to move him.</p>
