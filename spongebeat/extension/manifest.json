@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "SpongeBeat",
+  "version": "1.0.0",
+  "description": "A pixel SpongeBob pops up and dances to the beat whenever music plays on a page.",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "action": {
+    "default_title": "SpongeBeat",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "32": "images/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["storage", "activeTab", "tabCapture", "offscreen"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/hook.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/dancer.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["beat-detector.js", "content/listen.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["images/sprite.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
